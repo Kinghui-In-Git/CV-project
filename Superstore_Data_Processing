@@ -37,6 +37,18 @@ print(df.head(3))  # 展示业绩前三
 print(df.tail(3))  # 展示业绩后三
 print()
 
+# 产品利润率分级
+sales_df = pd.read_excel('Sample_Superstore.xls')
+df_profit_level = sales_df[['订单日期', '子类别', '销售额', '利润']]
+col = ['Order date', 'Subclass', 'Sales', 'Profit']
+df_profit_level.columns = col
+df_profit_level = df_profit_level.set_index('Order date')
+df_subclass_profit_level = df_profit_level.groupby('Subclass').resample('Y').sum()
+df_subclass_profit_level['Profit Ratio'] = df_subclass_profit_level['Profit'] / df_subclass_profit_level['Sales']
+bins = [0, 0.15, 0.2, 0.25, 1.00]
+df_subclass_profit_level = pd.cut(df_subclass_profit_level['Profit Ratio'], bins, labels=['一般', '良好', '优秀', '极佳'])
+print(df_subclass_profit_level)
+
 # 使用matplotlib绘制销售状况饼状图
 plt.pie(df['销售额'],
         labels=('SD', 'GD', 'HL', 'HEN', 'JL', 'LN', 'FJ', 'SH', 'HEB', 'JS', 'AH',
