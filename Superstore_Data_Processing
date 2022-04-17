@@ -1,0 +1,68 @@
+import pandas as pd
+from pandas import DataFrame
+import matplotlib.pyplot as plt
+
+
+# 导入数据源并指定index列
+sales_df = pd.read_excel('Sample_Superstore.xls', index_col='行 ID')
+
+# 查看数据源基本信息 -->（共计9959行，19列）
+print(sales_df.info)
+print()
+
+# 按照订单年份、省区市、采购公司类型逐步下探统计总销售额
+sale_year_prov_partner = sales_df.groupby([sales_df['订单日期'].dt.year, '省/自治区', '细分'])['销售额'].sum()
+print()
+
+# 提取2021年湖北省的销售数据
+sale_2021 = sale_year_prov_partner[2021, '湖北']
+print(sale_2021)
+print()
+
+# 提取2020年的各省份销售额并展示全国销售额百分比占比
+sale_to_wholesale = sales_df.groupby([sales_df['订单日期'].dt.year, '省/自治区'])['销售额'].sum()
+sale_to_wholesale = sale_to_wholesale[2020]
+sale_to_wholesale_percent = 100 * sale_to_wholesale / sale_to_wholesale.sum()
+df = DataFrame(sale_to_wholesale)
+df['销售百分比'] = DataFrame(sale_to_wholesale_percent)
+print(df)
+print()
+
+# 展示销售额的基本数据
+print(df['销售额'].describe())  # 2020年业务遍及全国30个省 年平均值销售额为141451.33元 最大销售额为424080.216 最小销售额为8433.18
+
+# 将省份销售额从大到小排列
+df = df.sort_values('销售额', ascending=False)
+print(df.head(3))  # 展示业绩前三
+print(df.tail(3))  # 展示业绩后三
+print()
+
+# 使用matplotlib绘制销售状况饼状图
+plt.pie(df['销售额'],
+        labels=('SD', 'GD', 'HL', 'HEN', 'JL', 'LN', 'FJ', 'SH', 'HEB', 'JS', 'AH',
+                'TJ', 'YN', 'HN', 'ZJ', 'HB', 'BJ', 'CQ', 'SN', 'SC', 'NM', 'SX',
+                'GX', 'HI', 'JX', 'GS', 'QH', 'NX', 'GZ', 'XJ'),
+        autopct='%.2f%%')
+plt.title("2020 Sales Overview")
+plt.show()
+
+# 使用matplotlib绘制不同办公类别的产品销售额随时间(周）的变动趋势
+sales_df = pd.read_excel('Sample_Superstore.xls')
+sales_df = sales_df[['订单日期', '类别', '销售额']]
+col = ['Time', 'Category', 'Sales']
+sales_df.columns = col
+sales_df = sales_df.set_index('Time')
+sales_general = sales_df.resample('W').sum()  # 产品总体销售额按周汇总
+sales_office = sales_df[(sales_df['Category'] == '办公用品')].resample('W').sum()  # 按周汇总办公用品销售额
+sales_tech = sales_df[(sales_df['Category'] == '技术')].resample('W').sum()  # 按周汇总技术销售额
+sales_furn = sales_df[(sales_df['Category'] == '家具')].resample('W').sum()  # 按周汇总家具销售额
+
+# 生成销量展示子图
+figure, ax = plt.subplots(4, 1, figsize=(6, 6))
+sales_general.plot(ax=ax[0], color='r', title='Total Sales')
+sales_office.plot(ax=ax[1], color='y', title='Office Equipments Sales')
+sales_tech.plot(ax=ax[2], color='g', title='Technical Sales')
+sales_furn.plot(ax=ax[3], color='b', title='Furniture Sales')
+plt.tight_layout()
+plt.legend()
+plt.show()
